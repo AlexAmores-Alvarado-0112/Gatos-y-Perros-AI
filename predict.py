@@ -10,44 +10,64 @@ print("Paso 1: Iniciando...")
 # Configuración
 # ==================================================
 
-# Forzamos directamente CPU para ahorrar la memoria de inicialización de CUDA en Render
+# Forzar directamente CPU para ahorrar la memoria de inicialización de CUDA en Render
 device = torch.device("cpu")
 
 CLASES = ["Gatos", "perros"]
 
 # Umbral mínimo de confianza
-UMBRAL_CONFIANZA = 90
+UMBRAL_CONFIANZA = 95
 
 # ==================================================
 # Arquitectura del modelo
 # ==================================================
 
-class MiCNNClasificador(nn.Module):
-
+class MiCNNClasificadorMejorada(nn.Module):
     def __init__(self):
-        super().__init__()
+        super(MiCNNClasificadorMejorada, self).__init__()
 
+        # Extractor de características más profundo
         self.features = nn.Sequential(
-            nn.Conv2d(3, 16, 3, padding=1),
+            # Bloque 1: 224x224 -> 112x112
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),
+            nn.BatchNorm2d(16), # Estabiliza el entrenamiento
             nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.Conv2d(16, 32, 3, padding=1),
+            nn.MaxPool2d(2, 2),
+
+            # Bloque 2: 112x112 -> 56x56
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
             nn.ReLU(),
-            nn.MaxPool2d(2)
+            nn.MaxPool2d(2, 2),
+
+            # Bloque 3 nuevo: 56x56 -> 28x28 (Extrae características de más alto nivel)
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2)
         )
 
+        # Global Average Pooling: Reduce cualquier tamaño de mapa a 1x1 por canal
+        # Esto evita las 100,000 neuronas y previene drásticamente el Overfitting
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))
+
+        # Bloque de Clasificación mucho más ligero y eficiente
         self.classifier = nn.Sequential(
-            nn.Linear(32 * 56 * 56, 128),
+            nn.Linear(64, 32), # Recibe solo los 64 canales del mapa final
             nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(128, 2)
+            nn.Dropout(0.4),
+            nn.Linear(32, 2)   # Deja 2 si sigues con Perro/Gato, o 3 si aplicas la Opción 1
         )
 
     def forward(self, x):
         x = self.features(x)
-        x = x.view(x.size(0), -1)
-        return self.classifier(x)
+        x = self.pool(x)       # Pasa por el Global Average Pool
+        x = x.view(x.size(0), -1) # Ahora el aplanado es diminuto (solo 64 elementos)
+        x = self.classifier(x)
+        return x
 
+# Instanciar el nuevo modelo
+model = MiCNNClasificadorMejorada().to(device)
 # ==================================================
 # Cargar modelo (Optimizado para baja RAM)
 # ==================================================
@@ -79,11 +99,11 @@ print("Modelo cargado correctamente.")
 
 transformacion = transforms.Compose([
     transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(
-        mean=[0.485, 0.456, 0.406],
-        std=[0.229, 0.224, 0.225]
-    )
+    transforms.RandomRotation(15),           # Rota la imagen un poco
+    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2), # Varía el color/brillo
+    transforms.RandomHorizontalFlip(),        
+    transforms.ToTensor(),                  
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) 
 ])
 
 # ==================================================
