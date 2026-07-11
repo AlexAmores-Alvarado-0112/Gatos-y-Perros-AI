@@ -5,17 +5,17 @@ venv/
 __pycache__/
 *.pyc
 
-# Carpeta temporal de imágenes subidas
+# Imágenes subidas por los usuarios
 uploads/
-
-# Archivos del sistema (macOS)
-.DS_Store
 
 # Configuración de VS Code
 .vscode/
 
-# Archivos de registro
+# Logs
 *.log
 
-# Variables de entorno (si las usas después)
+# Variables de entorno
 .env
+
+# Archivos del sistema macOS
+.DS_Store
