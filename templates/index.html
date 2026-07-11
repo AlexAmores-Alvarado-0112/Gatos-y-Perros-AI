@@ -4,40 +4,24 @@
 <!-- ===================================================== -->
 <!-- 1. ENCABEZADO -->
 <!-- ===================================================== -->
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Animal Vision AI</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body>
 
-    <nav class="navbar">
-
+<nav class="navbar">
     <div class="logo">
-
         🐾 Gatos y Perros AI
-
     </div>
-
     <ul>
-
         <li><a href="/">Inicio</a></li>
-
         <li><a href="#modelo">Modelo</a></li>
-
         <li><a href="#resultado">Resultados</a></li>
-
     </ul>
-
 </nav>
 
 <div class="contenedor">
@@ -45,211 +29,112 @@
 <!-- ===================================================== -->
 <!-- 2. HEADER -->
 <!-- ===================================================== -->
-
 <header>
-
     <h1>🐾 Gatos y Perros AI</h1>
-
-    <p>
-        Clasificador Inteligente mediante Redes Neuronales Convolucionales
-    </p>
-
+    <p>Clasificador Inteligente mediante Redes Neuronales Convolucionales</p>
 </header>
 
 <!-- ===================================================== -->
 <!-- 3. FORMULARIO -->
 <!-- ===================================================== -->
-
-<form
-action="/predict"
-method="POST"
-enctype="multipart/form-data">
-
+<form action="/predict" method="POST" enctype="multipart/form-data">
     <label class="drop">
-
-        <input
-            type="file"
-            id="image-uploader"
-            name="imagen"
-            accept="image/*"
-            required
-            onchange="preview(event)">
-
+        <!-- Reemplazamos la función vieja por la nueva optimizada -->
+        <input type="file" name="imagen" id="inputImagen" accept="image/*" onchange="gestionarPrevisualizacion(this)">
         <span id="upload-text">
-
             {% if imagen %}
                 📷 Imagen cargada: {{ imagen }}
             {% else %}
                 📷 Selecciona una imagen
             {% endif %}
-
         </span>
-
     </label>
 
 <!-- ===================================================== -->
-<!-- 4. VISTA PREVIA -->
+<!-- 4. VISTA PREVIA SUPERIOR (ANTES DE ENVIAR) -->
 <!-- ===================================================== -->
-
-{% if imagen %}
-
-    <img
-        id="preview"
-        class="preview"
-        src="{{ url_for('uploaded_file', filename=imagen) }}">
-
-{% else %}
-
-    <img
-        id="preview"
-        class="preview"
-        style="display:none;">
-
-{% endif %}
+<img id="preview" class="preview" style="display:none;">
 
 <!-- ===================================================== -->
 <!-- 5. BOTÓN -->
 <!-- ===================================================== -->
-
 <button type="submit">
-
     Analizar Imagen
-
 </button>
-
 </form>
 
 <!-- ===================================================== -->
 <!-- 6. PANEL DE RESULTADOS -->
 <!-- ===================================================== -->
-
 {% if clase %}
-
-<section class="panel">
+<section class="panel" id="resultado">
 
 <!-- ===================================================== -->
 <!-- 7. COMPARACIÓN DE IMÁGENES -->
 <!-- ===================================================== -->
-
 <div class="imagenes">
-
     <div class="tarjeta">
-
         <h3>Imagen enviada</h3>
-
-        <img
-            src="{{ url_for('uploaded_file', filename=imagen) }}"
-            class="foto">
-
+        <!-- Eliminamos el src="#" para evitar peticiones basura al servidor -->
+        <img id="vistaPrevia" class="preview" alt="Imagen enviada" style="max-width: 100%; border-radius: 10px; display: none;">
     </div>
 
     <div class="tarjeta">
-
         <h3>Clase representativa</h3>
-
-        <img
-            src="{{ url_for('static', filename=imagen_modelo) }}"
-            class="foto">
-
+        <img src="{{ url_for('static', filename=imagen_modelo) }}" class="foto" alt="Representación de la clase">
     </div>
-
 </div>
 
 <!-- ===================================================== -->
 <!-- 8. RESULTADO -->
 <!-- ===================================================== -->
-
 <div class="resultado">
-
     <h2>Resultado</h2>
-
     <h1>{{ clase }}</h1>
-
     <p>Confianza del modelo</p>
-
     <div class="barra">
-
-        <div
-            id="barra"
-            class="progreso">
-
-        </div>
-
+        <div id="barra" class="progreso"></div>
     </div>
-
     <p>{{ confianza }}%</p>
-
-    <input
-        type="hidden"
-        id="valorConfianza"
-        value="{{ confianza }}">
+    
+    <input type="hidden" id="valorConfianza" value="{{ confianza }}">
 
     <p>
-
-        Tiempo de inferencia
-
+        Tiempo de inferencia 
         <strong>{{ tiempo }} segundos</strong>
-
     </p>
-
 </div>
 
 <!-- ===================================================== -->
 <!-- 9. INFORMACIÓN DEL MODELO -->
 <!-- ===================================================== -->
-
-<div class="modelo">
-
+<div class="modelo" id="modelo">
     <h2>Información del Modelo</h2>
-
     <table>
-
         <tr>
-
             <td>Framework</td>
-
             <td>PyTorch</td>
-
         </tr>
-
         <tr>
-
             <td>Arquitectura</td>
-
             <td>CNN Personalizada</td>
-
         </tr>
-
         <tr>
-
             <td>Resolución</td>
-
             <td>224 × 224 píxeles</td>
-
         </tr>
-
         <tr>
-
             <td>Número de clases</td>
-
             <td>2 (Gatos / Perros)</td>
-
         </tr>
-
         <tr>
-
             <td>Accuracy</td>
-
             <td>72.5%</td>
-
         </tr>
-
     </table>
-
 </div>
 
 </section>
-
 {% endif %}
 
 </div>
@@ -257,58 +142,64 @@ enctype="multipart/form-data">
 <!-- ===================================================== -->
 <!-- 10. FOOTER -->
 <!-- ===================================================== -->
-
 <footer>
-
-Proyecto Final
-<br>
-
-Ingeniería en Computación
-
+    Proyecto Final
+    <br>
+    Ingeniería en Computación
 </footer>
 
 <!-- ===================================================== -->
-<!-- 11. JAVASCRIPT -->
+<!-- 11. JAVASCRIPT REESTRUCTURADO -->
 <!-- ===================================================== -->
-
 <script>
-
-function preview(event){
-
-    const img = document.getElementById("preview");
-
+// 1. Maneja la selección de la imagen en tiempo real antes de enviar
+function gestionarPrevisualizacion(input) {
+    const imgPreviewArriba = document.getElementById("preview");
     const uploadText = document.getElementById("upload-text");
 
-    if(event.target.files.length > 0){
+    if (input.files && input.files[0]) {
+        const archivo = input.files[0];
+        const reader = new FileReader();
 
-        const archivo = event.target.files[0];
+        reader.onload = function(e) {
+            // Guardamos los bytes de forma segura en la caché del navegador del usuario
+            localStorage.setItem('imagenBase64', e.target.result);
+            
+            // Mostramos la miniatura arriba del botón antes de procesar
+            imgPreviewArriba.src = e.target.result;
+            imgPreviewArriba.style.display = "block";
+            uploadText.textContent = "📷 Imagen cargada: " + archivo.name;
+        }
 
-        img.src = URL.createObjectURL(archivo);
-
-        img.style.display = "block";
-
-        uploadText.textContent = "📷 Imagen cargada: " + archivo.name;
-
+        reader.readAsDataURL(archivo);
     }
-
 }
 
-window.onload = function(){
-
+// 2. Controla la persistencia de datos al recargar la página tras el análisis
+window.addEventListener('DOMContentLoaded', () => {
     const barra = document.getElementById("barra");
-
     const valor = document.getElementById("valorConfianza");
+    const imgVistaPreviaAbajo = document.getElementById("vistaPrevia");
+    const imgGuardada = localStorage.getItem('imagenBase64');
 
-    if(barra && valor){
-
+    // Animación de la barra de confianza
+    if (barra && valor) {
         barra.style.width = valor.value + "%";
-
     }
 
-}
+    // Si Flask arrojó resultados, recuperamos la imagen guardada del navegador
+    if (imgVistaPreviaAbajo && imgGuardada) {
+        imgVistaPreviaAbajo.src = imgGuardada;
+        imgVistaPreviaAbajo.style.display = "block";
+    }
 
+    // Si regresamos al inicio limpio de forma manual, borramos la caché
+    if (!valor) {
+        localStorage.removeItem('imagenBase64');
+    }
+});
 </script>
+
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
-
 </html>
