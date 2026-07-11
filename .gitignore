@@ -1,0 +1,21 @@
+# Entorno virtual
+venv/
+
+# Caché de Python
+__pycache__/
+*.pyc
+
+# Carpeta temporal de imágenes subidas
+uploads/
+
+# Archivos del sistema (macOS)
+.DS_Store
+
+# Configuración de VS Code
+.vscode/
+
+# Archivos de registro
+*.log
+
+# Variables de entorno (si las usas después)
+.env

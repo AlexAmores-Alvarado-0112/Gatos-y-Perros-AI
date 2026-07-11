@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<!-- ===================================================== -->
+<!-- 1. ENCABEZADO -->
+<!-- ===================================================== -->
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Animal Vision AI</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+    <div class="logo">
+
+        🐾 Gatos y Perros AI
+
+    </div>
+
+    <ul>
+
+        <li><a href="/">Inicio</a></li>
+
+        <li><a href="#modelo">Modelo</a></li>
+
+        <li><a href="#resultado">Resultados</a></li>
+
+    </ul>
+
+</nav>
+
+<div class="contenedor">
+
+<!-- ===================================================== -->
+<!-- 2. HEADER -->
+<!-- ===================================================== -->
+
+<header>
+
+    <h1>🐾 Gatos y Perros AI</h1>
+
+    <p>
+        Clasificador Inteligente mediante Redes Neuronales Convolucionales
+    </p>
+
+</header>
+
+<!-- ===================================================== -->
+<!-- 3. FORMULARIO -->
+<!-- ===================================================== -->
+
+<form
+action="/predict"
+method="POST"
+enctype="multipart/form-data">
+
+    <label class="drop">
+
+        <input
+            type="file"
+            id="image-uploader"
+            name="imagen"
+            accept="image/*"
+            required
+            onchange="preview(event)">
+
+        <span id="upload-text">
+
+            {% if imagen %}
+                📷 Imagen cargada: {{ imagen }}
+            {% else %}
+                📷 Selecciona una imagen
+            {% endif %}
+
+        </span>
+
+    </label>
+
+<!-- ===================================================== -->
+<!-- 4. VISTA PREVIA -->
+<!-- ===================================================== -->
+
+{% if imagen %}
+
+    <img
+        id="preview"
+        class="preview"
+        src="{{ url_for('uploaded_file', filename=imagen) }}">
+
+{% else %}
+
+    <img
+        id="preview"
+        class="preview"
+        style="display:none;">
+
+{% endif %}
+
+<!-- ===================================================== -->
+<!-- 5. BOTÓN -->
+<!-- ===================================================== -->
+
+<button type="submit">
+
+    Analizar Imagen
+
+</button>
+
+</form>
+
+<!-- ===================================================== -->
+<!-- 6. PANEL DE RESULTADOS -->
+<!-- ===================================================== -->
+
+{% if clase %}
+
+<section class="panel">
+
+<!-- ===================================================== -->
+<!-- 7. COMPARACIÓN DE IMÁGENES -->
+<!-- ===================================================== -->
+
+<div class="imagenes">
+
+    <div class="tarjeta">
+
+        <h3>Imagen enviada</h3>
+
+        <img
+            src="{{ url_for('uploaded_file', filename=imagen) }}"
+            class="foto">
+
+    </div>
+
+    <div class="tarjeta">
+
+        <h3>Clase representativa</h3>
+
+        <img
+            src="{{ url_for('static', filename=imagen_modelo) }}"
+            class="foto">
+
+    </div>
+
+</div>
+
+<!-- ===================================================== -->
+<!-- 8. RESULTADO -->
+<!-- ===================================================== -->
+
+<div class="resultado">
+
+    <h2>Resultado</h2>
+
+    <h1>{{ clase }}</h1>
+
+    <p>Confianza del modelo</p>
+
+    <div class="barra">
+
+        <div
+            id="barra"
+            class="progreso">
+
+        </div>
+
+    </div>
+
+    <p>{{ confianza }}%</p>
+
+    <input
+        type="hidden"
+        id="valorConfianza"
+        value="{{ confianza }}">
+
+    <p>
+
+        Tiempo de inferencia
+
+        <strong>{{ tiempo }} segundos</strong>
+
+    </p>
+
+</div>
+
+<!-- ===================================================== -->
+<!-- 9. INFORMACIÓN DEL MODELO -->
+<!-- ===================================================== -->
+
+<div class="modelo">
+
+    <h2>Información del Modelo</h2>
+
+    <table>
+
+        <tr>
+
+            <td>Framework</td>
+
+            <td>PyTorch</td>
+
+        </tr>
+
+        <tr>
+
+            <td>Arquitectura</td>
+
+            <td>CNN Personalizada</td>
+
+        </tr>
+
+        <tr>
+
+            <td>Resolución</td>
+
+            <td>224 × 224 píxeles</td>
+
+        </tr>
+
+        <tr>
+
+            <td>Número de clases</td>
+
+            <td>2 (Gatos / Perros)</td>
+
+        </tr>
+
+        <tr>
+
+            <td>Accuracy</td>
+
+            <td>72.5%</td>
+
+        </tr>
+
+    </table>
+
+</div>
+
+</section>
+
+{% endif %}
+
+</div>
+
+<!-- ===================================================== -->
+<!-- 10. FOOTER -->
+<!-- ===================================================== -->
+
+<footer>
+
+Proyecto Final
+<br>
+
+Ingeniería en Computación
+
+</footer>
+
+<!-- ===================================================== -->
+<!-- 11. JAVASCRIPT -->
+<!-- ===================================================== -->
+
+<script>
+
+function preview(event){
+
+    const img = document.getElementById("preview");
+
+    const uploadText = document.getElementById("upload-text");
+
+    if(event.target.files.length > 0){
+
+        const archivo = event.target.files[0];
+
+        img.src = URL.createObjectURL(archivo);
+
+        img.style.display = "block";
+
+        uploadText.textContent = "📷 Imagen cargada: " + archivo.name;
+
+    }
+
+}
+
+window.onload = function(){
+
+    const barra = document.getElementById("barra");
+
+    const valor = document.getElementById("valorConfianza");
+
+    if(barra && valor){
+
+        barra.style.width = valor.value + "%";
+
+    }
+
+}
+
+</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>
