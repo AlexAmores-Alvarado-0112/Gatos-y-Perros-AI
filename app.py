@@ -4,7 +4,7 @@ from predict import predecir_imagen
 import os
 import random
 import time
-import gc  # Forzar la liberación de memoria RAM
+import gc  # <--- Forzar la liberación de memoria RAM
 
 app = Flask(__name__)
 
@@ -42,7 +42,7 @@ def predict():
 
     inicio = time.time()
 
-    # Ejecuta la predicción del modelo (Retorna "Gatos", "perros" o "Desconocido")
+    # Ejecuta la predicción del modelo
     clase, confianza = predecir_imagen(ruta)
 
     tiempo = round(time.time() - inicio, 3)
@@ -52,7 +52,7 @@ def predict():
     # -------------------------------
     imagen_modelo = "img/desconocido/desconocido.png"
 
-    # Convertimos a minúsculas para evaluar las condiciones uniformemente
+    # Convertimos a minúsculas para evitar problemas de mayúsculas/minúsculas
     clase_normalizada = clase.lower()
 
     if clase_normalizada == "gatos":
@@ -60,7 +60,6 @@ def predict():
     elif clase_normalizada == "perros":
         carpeta = os.path.join(BASE_DIR, "static", "img", "perros")
     else:
-        # Aquí entra si el modelo predijo "Otros" o si no superó el umbral
         carpeta = os.path.join(BASE_DIR, "static", "img", "desconocido")
 
     if os.path.exists(carpeta):
@@ -77,13 +76,11 @@ def predict():
                 nombre
             ).replace("\\", "/")
 
-    print("Clase Detectada:", clase)
-    print("Imagen Asignada:", imagen_modelo)
+    print("Clase:", clase)
+    print("Imagen:", imagen_modelo)
 
-    # Conservamos el nombre del archivo subido antes de eliminar la referencia de Flask
-    nombre_archivo_subido = archivo.filename
-
-    # Limpieza post-predicción
+    # 🛠️ Limpieza post-predicción: Borramos variables pesadas de la petición
+    # y forzamos al recolector de basura a limpiar la RAM de inmediato.
     del archivo
     gc.collect()
 
@@ -92,7 +89,7 @@ def predict():
         clase=clase,
         confianza=confianza,
         tiempo=tiempo,
-        imagen=nombre_archivo_subido,
+        imagen=archivo.filename if 'archivo' in locals() else "",
         imagen_modelo=imagen_modelo
     )
 
@@ -106,6 +103,7 @@ def uploaded_file(filename):
 
 
 if __name__ == "__main__":
+    # Si se ejecuta de forma local o directa
     port = int(os.environ.get("PORT", 5000))
     app.run(
         host="0.0.0.0",
