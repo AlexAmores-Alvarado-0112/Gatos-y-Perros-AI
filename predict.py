@@ -4,24 +4,23 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 from PIL import Image
 
-print("Paso 1: Iniciando...")
+print("Paso 1: Iniciando Predictor...")
 
 # ==================================================
 # Configuración
 # ==================================================
-
-# Forzar directamente CPU para ahorrar la memoria de inicialización de CUDA en Render
 device = torch.device("cpu")
 
-CLASES = ["Gatos", "perros"]
+# IMPORTANTE: Asegúrate de que el orden de esta lista coincida exactamente con
+# el orden alfabético de tus carpetas en Google Drive (ej: Gatos, Otros, perros)
+CLASES = ["Gatos", "Otros", "perros"]
 
-# Umbral mínimo de confianza
-UMBRAL_CONFIANZA = 95
+# Umbral mínimo de confianza para evitar falsos positivos
+UMBRAL_CONFIANZA = 80.0
 
 # ==================================================
-# Arquitectura del modelo
+# Arquitectura del modelo (Modificada para 3 clases)
 # ==================================================
-
 class MiCNNClasificadorMejorada(nn.Module):
     def __init__(self):
         super(MiCNNClasificadorMejorada, self).__init__()
@@ -30,7 +29,7 @@ class MiCNNClasificadorMejorada(nn.Module):
         self.features = nn.Sequential(
             # Bloque 1: 224x224 -> 112x112
             nn.Conv2d(3, 16, kernel_size=3, padding=1),
-            nn.BatchNorm2d(16), # Estabiliza el entrenamiento
+            nn.BatchNorm2d(16),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
 
@@ -40,68 +39,58 @@ class MiCNNClasificadorMejorada(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
 
-            # Bloque 3 nuevo: 56x56 -> 28x28 (Extrae características de más alto nivel)
+            # Bloque 3: 56x56 -> 28x28
             nn.Conv2d(32, 64, kernel_size=3, padding=1),
             nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
 
-        # Global Average Pooling: Reduce cualquier tamaño de mapa a 1x1 por canal
-        # Esto evita las 100,000 neuronas y previene drásticamente el Overfitting
+        # Global Average Pooling
         self.pool = nn.AdaptiveAvgPool2d((1, 1))
 
-        # Bloque de Clasificación mucho más ligero y eficiente
+        # Bloque de Clasificación
         self.classifier = nn.Sequential(
-            nn.Linear(64, 32), # Recibe solo los 64 canales del mapa final
+            nn.Linear(64, 32),
             nn.ReLU(),
             nn.Dropout(0.4),
-            nn.Linear(32, 2)   # Deja 2 si sigues con Perro/Gato, o 3 si aplicas la Opción 1
+            nn.Linear(32, 3)   # <--- CAMBIADO A 3 CLASES
         )
 
     def forward(self, x):
         x = self.features(x)
-        x = self.pool(x)       # Pasa por el Global Average Pool
-        x = x.view(x.size(0), -1) # Ahora el aplanado es diminuto (solo 64 elementos)
+        x = self.pool(x)
+        x = x.view(x.size(0), -1)
         x = self.classifier(x)
         return x
 
-# Instanciar el nuevo modelo
-model = MiCNNClasificadorMejorada().to(device)
 # ==================================================
 # Cargar modelo (Optimizado para baja RAM)
 # ==================================================
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RUTA_MODELO = os.path.join(BASE_DIR, "modelo_animales.pth")
 
 print("Buscando modelo en:")
 print(RUTA_MODELO)
 
-model = MiCNNClasificador().to(device)
+model = MiCNNClasificadorMejorada().to(device)
 
-# weights_only=True evita que PyTorch consuma RAM de más cargando metadatos innecesarios
 model.load_state_dict(
     torch.load(RUTA_MODELO, map_location=device, weights_only=True)
 )
-
 model.eval()
 
-# Desactivamos el cálculo de gradientes de forma global para el modelo cargado
+# Desactivamos el cálculo de gradientes de forma global
 for param in model.parameters():
     param.requires_grad = False
 
-print("Modelo cargado correctamente.")
+print("Modelo de 3 clases cargado correctamente.")
 
 # ==================================================
-# Transformaciones
+# Transformaciones de producción
 # ==================================================
-
 transformacion = transforms.Compose([
     transforms.Resize((224, 224)),
-    transforms.RandomRotation(15),           # Rota la imagen un poco
-    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2), # Varía el color/brillo
-    transforms.RandomHorizontalFlip(),        
     transforms.ToTensor(),                  
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) 
 ])
@@ -109,9 +98,7 @@ transformacion = transforms.Compose([
 # ==================================================
 # Predicción
 # ==================================================
-
 def predecir_imagen(ruta_imagen):
-
     imagen = Image.open(ruta_imagen).convert("RGB")
     imagen = transformacion(imagen)
     imagen = imagen.unsqueeze(0).to(device)
@@ -122,11 +109,11 @@ def predecir_imagen(ruta_imagen):
         confianza, indice = torch.max(probabilidades, 1)
 
     confianza = round(confianza.item() * 100, 2)
-
-    # Si la confianza es baja
-    if confianza < UMBRAL_CONFIANZA:
-        return "Desconocido", confianza
-
     clase = CLASES[indice.item()]
+
+    # Si la predicción cae en la carpeta de "Otros" o la confianza es inferior al umbral,
+    # forzamos el retorno a "Desconocido".
+    if clase.lower() == "otros" or confianza < UMBRAL_CONFIANZA:
+        return "Desconocido", confianza
 
     return clase, confianza
