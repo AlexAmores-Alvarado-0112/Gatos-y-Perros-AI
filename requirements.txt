@@ -48,17 +48,6 @@ cloudpickle
 colorama
 colorcet
 comm
-conda
-conda-anaconda-telemetry
-conda-anaconda-tos
-conda-build
-conda-content-trust
-conda-libmamba-solver
-conda-pack
-conda-package-handling
-conda-repo-cli
-conda_index
-conda_package_streaming
 constantly
 contourpy
 cookiecutter
